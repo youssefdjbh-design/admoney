@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block title %}Login - AdViewer{% endblock %}
+
+{% block nav %}
+<li><a href="{{ url_for('index') }}">Home</a></li>
+<li><a href="{{ url_for('login') }}">Login</a></li>
+<li><a href="{{ url_for('signup') }}">Sign Up</a></li>
+{% endblock %}
+
+{% block content %}
+<div style="max-width: 500px; margin: 0 auto;">
+    <h1 style="text-align: center; color: #667eea; margin-bottom: 30px;">Login</h1>
+    
+    <form method="POST" action="{{ url_for('login') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+        
+        <div class="form-group">
+            <label for="email">Email</label>
+            <input type="email" id="email" name="email" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="password">Password</label>
+            <input type="password" id="password" name="password" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="totp_code">2FA Code (if enabled)</label>
+            <input type="text" id="totp_code" name="totp_code" placeholder="Optional">
+        </div>
+        
+        <button type="submit" class="btn" style="width: 100%; margin-top: 10px;">Login</button>
+    </form>
+    
+    <div style="text-align: center; margin-top: 30px;">
+        <a href="{{ url_for('google_auth') }}" class="btn" style="background: #ea4335; width: 100%; margin-top: 15px;">
+            Login with Google
+        </a>
+    </div>
+    
+    <p style="text-align: center; margin-top: 20px; color: #666;">
+        Don't have an account? <a href="{{ url_for('signup') }}" style="color: #667eea;">Sign up</a>
+    </p>
+</div>
+{% endblock %}
