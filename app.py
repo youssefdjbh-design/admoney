@@ -222,9 +222,12 @@ def dashboard():
 
 # Add logout, etc.
 
-# Create DB
+# Create DB on startup, but do not crash the web process if DB is unreachable.
 with app.app_context():
-    db.create_all()
+    try:
+        db.create_all()
+    except Exception as exc:
+        app.logger.warning("Database init skipped at startup: %s", exc)
 
 if __name__ == '__main__':
     app.run(debug=True)
