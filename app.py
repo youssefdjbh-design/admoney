@@ -11,6 +11,7 @@ from dotenv import load_dotenv
 import pyotp
 import secrets
 from functools import wraps
+from sqlalchemy.exc import OperationalError, SQLAlchemyError
 
 load_dotenv()
 
@@ -219,6 +220,21 @@ def dashboard():
     current_user = get_current_user()
     top_users = User.query.order_by(User.visit_count.desc()).limit(10).all()
     return render_template('dashboard.html', user=current_user, top_users=top_users)
+
+
+@app.errorhandler(OperationalError)
+def handle_operational_error(error):
+    app.logger.error('Database connection error: %s', error)
+    flash('Database is temporarily unavailable. Please try again in a moment.')
+    return redirect(url_for('index')), 503
+
+
+@app.errorhandler(SQLAlchemyError)
+def handle_sqlalchemy_error(error):
+    db.session.rollback()
+    app.logger.error('Database error: %s', error)
+    flash('A database error occurred. Please try again.')
+    return redirect(url_for('index')), 500
 
 # Add logout, etc.
 
