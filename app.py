@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, make_response
 from flask_bcrypt import Bcrypt
-from flask_oauthlib.client import OAuth
+from authlib.integrations.flask_client import OAuth
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity, set_access_cookies, unset_jwt_cookies
@@ -36,16 +36,12 @@ bcrypt = Bcrypt(app)
 jwt = JWTManager(app)
 
 oauth = OAuth(app)
-google = oauth.remote_app(
-    'google',
-    consumer_key=os.getenv('GOOGLE_CLIENT_ID'),
-    consumer_secret=os.getenv('GOOGLE_CLIENT_SECRET'),
-    request_token_params={'scope': 'email profile'},
-    base_url='https://www.googleapis.com/oauth2/v1/',
-    request_token_url=None,
-    access_token_method='POST',
-    access_token_url='https://accounts.google.com/o/oauth2/token',
-    authorize_url='https://accounts.google.com/o/oauth2/auth',
+google = oauth.register(
+    name='google',
+    client_id=os.getenv('GOOGLE_CLIENT_ID'),
+    client_secret=os.getenv('GOOGLE_CLIENT_SECRET'),
+    server_metadata_url='https://accounts.google.com/.well-known/openid-configuration',
+    client_kwargs={'scope': 'openid email profile'},
 )
 
 limiter = Limiter(get_remote_address, app=app, default_limits=["200 per day", "50 per hour"])
@@ -146,23 +142,25 @@ def logout():
 
 @app.route('/auth/google')
 def google_auth():
-    return google.authorize(callback=url_for('google_callback', _external=True))
+    redirect_uri = url_for('google_callback', _external=True)
+    return google.authorize_redirect(redirect_uri)
 
 @app.route('/google/callback')
 def google_callback():
-    resp = google.authorized_response()
-    if resp is None:
+    try:
+        token = google.authorize_access_token()
+    except Exception:
         flash('Google login failed')
         return redirect(url_for('login'))
-    
-    # Get user info
-    access_token = resp['access_token']
-    user_info = google.get('userinfo', token=(access_token, ''))
-    
-    if user_info.data:
-        email = user_info.data.get('email')
-        google_id = user_info.data.get('id')
-        
+
+    user_info = token.get('userinfo')
+    if not user_info:
+        user_info = google.get('https://openidconnect.googleapis.com/v1/userinfo').json()
+
+    if user_info:
+        email = user_info.get('email')
+        google_id = user_info.get('sub') or user_info.get('id')
+
         # Find or create user
         user = User.query.filter_by(google_id=google_id).first()
         if not user:
@@ -173,7 +171,7 @@ def google_callback():
             else:
                 user.google_id = google_id
             db.session.commit()
-        
+
         # Create JWT token
         access_token_jwt = create_access_token(identity=user.id)
         response = make_response(redirect(url_for('dashboard')))
