@@ -67,6 +67,15 @@ app.get('/api/health', async (_req, res) => {
   }
 });
 
+app.get('/api/config', (_req, res) => {
+  const adsenseEnabled = String(process.env.ADSENSE_ENABLED || 'false').toLowerCase() === 'true';
+  return res.json({
+    adsenseEnabled,
+    adsenseClientId: process.env.ADSENSE_CLIENT_ID || '',
+    adsenseSlotIdViewAd: process.env.ADSENSE_SLOT_ID_VIEW_AD || '',
+  });
+});
+
 app.post('/api/auth/signup', async (req, res) => {
   try {
     const { email, password } = req.body;
