@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { NgFor, NgIf, DecimalPipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
+import { AdsService } from '../../core/ads.service';
 
 type User = {
   id: number;
@@ -47,9 +48,10 @@ export class DashboardComponent implements OnInit {
   user: User | null = null;
   topUsers: User[] = [];
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient, private ads: AdsService) {}
 
   ngOnInit(): void {
+    this.ads.enableAutoAds();
     this.http
       .get<{ user: User; topUsers: User[] }>('/api/dashboard', { withCredentials: true })
       .subscribe((res) => {

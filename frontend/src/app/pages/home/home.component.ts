@@ -1,5 +1,6 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { AdsService } from '../../core/ads.service';
 
 @Component({
   selector: 'app-home',
@@ -16,4 +17,10 @@ import { RouterLink } from '@angular/router';
     </section>
   `,
 })
-export class HomeComponent {}
+export class HomeComponent implements OnInit {
+  constructor(private ads: AdsService) {}
+
+  ngOnInit(): void {
+    this.ads.enableAutoAds();
+  }
+}
