@@ -22,7 +22,7 @@ export class AdsService {
             this.loading = false;
             return;
           }
-          this.loadScript(cfg.adsenseClientId);
+          this.pushAutoAds(cfg.adsenseClientId);
         },
         error: () => {
           this.loading = false;
@@ -30,26 +30,17 @@ export class AdsService {
       });
   }
 
-  private loadScript(clientId: string): void {
-    const existing = document.querySelector('script[data-adsense="true"]') as HTMLScriptElement | null;
-    if (existing) {
-      this.pushAutoAds(clientId);
+  private pushAutoAds(clientId: string): void {
+    const script = document.querySelector('script[data-adsense="true"]') as HTMLScriptElement | null;
+    if (!script) {
+      this.loading = false;
       return;
     }
 
-    const script = document.createElement('script');
-    script.async = true;
-    script.src = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${clientId}`;
-    script.crossOrigin = 'anonymous';
-    script.setAttribute('data-adsense', 'true');
-    script.onload = () => this.pushAutoAds(clientId);
-    script.onerror = () => {
-      this.loading = false;
-    };
-    document.head.appendChild(script);
-  }
+    if (!script.src.includes(clientId)) {
+      script.src = `https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${clientId}`;
+    }
 
-  private pushAutoAds(clientId: string): void {
     const w = window as Window & { adsbygoogle?: unknown[] };
     try {
       w.adsbygoogle = w.adsbygoogle || [];
